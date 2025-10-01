@@ -176,6 +176,8 @@ def plot_costmap(n_points=10, size=50, resolution=0.1, radius=5.0, seed=None,
                     CS = ax.contour(xs, ys, cost_modified, levels=[hv], colors=['black'], linewidths=1.4, linestyles='-')
                     # draw a white thinner contour on top for contrast
                     ax.contour(xs, ys, cost_modified, levels=[hv], colors=['white'], linewidths=0.8, linestyles='--')
+                    # Add filled contour in green with some transparency
+                    #ax.contourf(xs, ys, cost_modified, levels=[hv, cost_modified.max()], colors=['green'], alpha=0.5)
                 except Exception:
                     pass
 

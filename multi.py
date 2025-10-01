@@ -349,8 +349,9 @@ if __name__ == "__main__":
                         bx = self.background_map['xs']
                         by = self.background_map['ys']
                         bcost = self.background_map['cost']
+                        # use a neutral grayscale background for the static costmap
                         ax.imshow(bcost, origin='lower', extent=[bx[0], bx[-1], by[0], by[-1]],
-                                  cmap='viridis', alpha=0.8, interpolation='nearest', zorder=0, vmin=0, vmax=np.max(bcost))
+                                  cmap='gray', alpha=0.9, interpolation='nearest', zorder=0, vmin=0, vmax=np.max(bcost))
 
                     # Always compute dynamic coverage overlay (1m resolution grid)
                     grid_res = 0.1
@@ -364,10 +365,36 @@ if __name__ == "__main__":
                         for pt in a.get('path_full', []):
                             px, py = pt[0], pt[1]
                             d = np.hypot(GX - px, GY - py)
-                            coverage[d <= cover_radius] = 1.0
-                    # display dynamic coverage overlay with slightly stronger alpha and above static map
-                        ax.imshow(coverage, origin='lower', extent=[0, grid_size, 0, grid_size],
-                                  cmap='Greens', alpha=0.8, interpolation='nearest', zorder=1, vmin=0, vmax=1)
+                            within = (d <= cover_radius)
+                            if self.background_map is not None:
+                                bx = self.background_map['xs']
+                                by = self.background_map['ys']
+                                bcost = self.background_map['cost']
+                                # assume bx,by are uniformly spaced
+                                if len(bx) > 1:
+                                    dx = float(bx[1] - bx[0])
+                                else:
+                                    dx = 1.0
+                                if len(by) > 1:
+                                    dy = float(by[1] - by[0])
+                                else:
+                                    dy = 1.0
+                                # map the agent point (px,py) to background_map indices
+                                ixp = int(np.clip(round((px - bx[0]) / dx), 0, bcost.shape[1] - 1))
+                                iyp = int(np.clip(round((py - by[0]) / dy), 0, bcost.shape[0] - 1))
+                                try:
+                                    # If the background cost at the agent point is >= 3,
+                                    # consider the entire radius-area around that point covered.
+                                    if bcost[iyp, ixp] >= 3:
+                                        coverage[within] = 1.0
+                                except Exception:
+                                    # fallback: mark area covered if we can't index
+                                    coverage[within] = 1.0
+                            else:
+                                coverage[within] = 1.0
+                    # display dynamic coverage overlay with a purple gradient and stronger alpha above static map
+                    ax.imshow(coverage, origin='lower', extent=[0, grid_size, 0, grid_size],
+                              cmap=plt.get_cmap('Purples'), alpha=0.65, interpolation='nearest', zorder=2, vmin=0, vmax=1)
                 except Exception:
                     # if anything fails, continue without background/overlay
                     pass
@@ -424,9 +451,9 @@ if __name__ == "__main__":
 
     # configure three agents with different starts and goals
     agent_configs = [
-        {'src': [0.0, 0.0], 'dest': [40.0, 10.0], 'alpha': 0.6, 'color': 'black', 'label': 'A', 'locx':40, 'locy':35},
-        {'src': [5.0, 45.0], 'dest': [35.0, 5.0], 'alpha': 0.1, 'color': 'red',   'label': 'B', 'locx':10, 'locy':15},
-        {'src': [45.0, 5.0], 'dest': [10.0, 40.0], 'alpha': 0.3, 'color': 'blue',  'label': 'C', 'locx':40, 'locy':30},
+        {'src': [0.0, 0.0], 'dest': [40.0, 10.0], 'alpha': 0.1, 'color': 'black', 'label': 'A', 'locx':40, 'locy':35},
+        {'src': [5.0, 45.0], 'dest': [35.0, 5.0], 'alpha': 0.9, 'color': 'red',   'label': 'B', 'locx':10, 'locy':15},
+        {'src': [45.0, 5.0], 'dest': [10.0, 40.0], 'alpha': 0.9, 'color': 'blue',  'label': 'C', 'locx':40, 'locy':30},
     ]
 
     multi_anim = MultiAgentAnimator(agent_configs)
