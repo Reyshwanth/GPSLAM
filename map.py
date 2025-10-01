@@ -33,7 +33,7 @@ def plot_random_points(n_points=10, size=50, seed=None, save_path=None):
     plt.show()
 
 
-def plot_costmap(n_points=10, size=50, resolution=0.1, radius=5.0, seed=None,
+def plot_costmap(n_points=10, size=50, resolution=0.1, radius=5.0, radius_c=10, seed=None,
                  cmap='viridis', save_path=None, show_cell_grid=True,
                  highlight_value=2.0, highlight_cmap='RdYlBu_r', highlight_contour=True):
     """Generate a costmap for `n_points` random points inside a size x size square.
@@ -82,7 +82,7 @@ def plot_costmap(n_points=10, size=50, resolution=0.1, radius=5.0, seed=None,
     while(not(np.all(cost_modified >= 3))):
 
 
-        if level3 <= cost_modified.max() and lower_bound!=0:
+        if lower_bound!=0:
             # Create a binary mask for the level3 region (cost >= level3)
             mask = (cost_modified >= level3)
             # Compute dilation radius in pixels using the plotting resolution
@@ -91,7 +91,7 @@ def plot_costmap(n_points=10, size=50, resolution=0.1, radius=5.0, seed=None,
             # avoid zero division
             if res <= 0:
                 res = 0.1
-            rad_px = max(1, int(np.ceil(float(radius) / res)))
+            rad_px = max(1, int(np.ceil(float(radius_c) / res)))
 
             # Build a circular structuring element (disk) as footprint
             r = np.arange(-rad_px, rad_px + 1)
@@ -188,7 +188,7 @@ def plot_costmap(n_points=10, size=50, resolution=0.1, radius=5.0, seed=None,
 
         ax.set_xlim(0, size)
         ax.set_ylim(0, size)
-        ax.set_title(f"Range Map({n_points} points); localizers with rc={radius} m")
+        ax.set_title(f"Range Map({n_points} points); rs={radius} m; rc={radius_c} m")
         ax.set_xlabel('x (m)')
         ax.set_ylabel('y (m)')
         ax.grid(False)
@@ -246,8 +246,8 @@ if __name__ == '__main__':
     # Demo: plot a costmap for 10 random points in a 50x50 space
     # (set seed=int for reproducibility, or seed=None for different map each run)
     # also compute and save a coarser costmap (1m resolution) for use as a background
-    cm = compute_costmap(n_points=25, size=50, resolution=0.1, radius=5.0, seed=None)
+    cm = compute_costmap(n_points=100, size=50, resolution=0.1, radius=0.5, seed=None)
     save_costmap_npz('costmap.npz', cm)
-    plot_costmap(n_points=25, size=50, resolution=0.1, radius=5.0, seed=1, cmap='viridis')
+    plot_costmap(n_points=100, size=50, resolution=0.1, radius=0.5, radius_c=5.0,seed=1, cmap='viridis')
     # If you prefer the scatter-only plot, call:
     # plot_random_points(n_points=10, size=50, seed=None)
